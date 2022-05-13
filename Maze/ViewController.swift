@@ -8,11 +8,29 @@
 import UIKit
 //CMMotionManager(加速度センサーに関するもの)を使うための設定
 import CoreMotion
+import AVFoundation
 
 class ViewController: UIViewController {
     
+    static var bgmPlayer: AVAudioPlayer?
+    
+    static func playBGM(fileName: String) {
+        if let soundFilePath = Bundle.main.path(forResource: fileName, ofType: "mp3") {
+            if let audiPlayer = try? AVAudioPlayer(contentsOf: URL(fileURLWithPath: soundFilePath), fileTypeHint: nil) {
+                audiPlayer.numberOfLoops = -1
+                audiPlayer.prepareToPlay()
+                bgmPlayer = audiPlayer
+            }
+        }
+        bgmPlayer?.play()
+    }
+    
+    static func stopBGM() {
+        bgmPlayer?.stop()
+    }
+    
     //プレイヤーを表す
-    var playerView: UIView!
+    var playerView: UIImageView!
     //iPhoneの動きを感知する
     var playerMotionManager: CMMotionManager!
     //プレイヤーが動く速さ
@@ -85,9 +103,9 @@ class ViewController: UIViewController {
         }
         
         //playerViewを生成
-        playerView = UIView(frame: CGRect(x: 0, y: 0, width: cellWidth / 6, height: cellHeight / 6)) //playerの幅・高さは、マップ１マスの1/6
+        playerView = UIImageView(frame: CGRect(x: 0, y: 0, width: cellWidth / 6, height: cellHeight / 6)) //playerの幅・高さは、マップ１マスの1/6
         playerView.center = startView.center
-        playerView.backgroundColor = UIColor.gray
+        playerView.image = UIImage(named: "主人公")
         view.addSubview(playerView)
         
         
@@ -167,22 +185,21 @@ class ViewController: UIViewController {
     
     //ゲームクリア・ゲームオーバー時にアラートを表示し、リトライできるようにしよう！
     func gameCheck(result: String, message: String){
-        //加速度止める
-        if playerMotionManager.isAccelerometerActive {
+        
+        //加速度を止める
+        if playerMotionManager.isAccelerometerActive{
             playerMotionManager.stopAccelerometerUpdates()
         }
         
-        let gemeCheckAlert: UIAlertController = UIAlertController(title: result, message: message, preferredStyle: .alert)
+        let gamecheckAlert: UIAlertController = UIAlertController(title: result, message: message, preferredStyle: .alert)
         
-        let retryAction = UIAlertAction(title: "もう一度", style: .default, handler: {
-            (action: UIAlertAction!) -> Void in
+        let retryAction = UIAlertAction(title: "もう一度", style: .default, handler: {(action: UIAlertAction!) -> Void in
             self.retry()
+            
         })
         
-        gameCheckAlert.addAction(retryAction)
-        
-        self.present(gameCheckAlert, animated: true, completion: nil)
-        
+        gamecheckAlert.addAction(retryAction)
+        self.present(gamecheckAlert, animated: true, completion: nil)
         
     }
     
@@ -201,8 +218,15 @@ class ViewController: UIViewController {
     //BGMの再生
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        .playBGM(fileName: "music")
+        ViewController.playBGM(fileName: "music")
     }
+    //BGMの停止
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        ViewController.stopBGM()
+    }
+    
+    
 }
 
 
